@@ -69,7 +69,7 @@ fn main() {
 
     println!(
         "      {} : {:?}",
-        format!("{:>w$}", "Brute Force Search").blue().bold(),
+        format!("{:>w$}", "Greedy Search").blue().bold(),
         duration_gs
     );
 
