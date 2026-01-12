@@ -1,12 +1,12 @@
+use core::f32;
 use rayon::prelude::*;
+use std::cmp::{max, min};
 use std::collections::VecDeque;
-use std::{
-    cmp::{max, min},
-    f32,
-};
+use std::usize;
 
 #[test]
 fn unit() {
+    // Handle test cases properly error are there
     let mut vec1 = Vec::with_capacity(10);
     let mut vec2 = Vec::with_capacity(10);
     vec1.resize(99, 1.45657);
@@ -33,15 +33,9 @@ struct Cosine {
 
 impl Graph {
     fn new(n: usize) -> Graph {
-        let adj_list: Vec<Vec<usize>> = (0..n)
-        .into_par_iter()
-        .map(|_| Vec::new())
-        .collect();
+        let adj_list: Vec<Vec<usize>> = (0..n).into_par_iter().map(|_| Vec::new()).collect();
 
-    let vectors: Vec<Vec<f32>> = (0..n)
-        .into_par_iter()
-        .map(|_| Vec::new())
-        .collect();
+        let vectors: Vec<Vec<f32>> = (0..n).into_par_iter().map(|_| Vec::new()).collect();
         return Graph { adj_list, vectors };
     }
 
@@ -60,9 +54,9 @@ impl Graph {
         }
     }
 
-    // Write thread safe ques , use parallel but not rayon needed here 
-    // Parallel opreations using ques is tricky 
-    
+    // Write thread safe ques , use parallel but not rayon needed here
+    // Parallel opreations using ques is tricky
+
     fn bfs_traversal(&self, s: usize) {
         let mut que: VecDeque<usize> = VecDeque::new();
         let mut vist: Vec<bool> = vec![false; self.adj_list.len()];
@@ -115,7 +109,41 @@ impl Graph {
         best_vec
     }
 
-    fn greedy_search() {}
+    fn greedy_search(&self, query: &[f32]) -> Option<Vec<f32>> {
+        let mut bestVector = Vec::<f32>::new();
+        let randNode: usize = 42; // add the rand usize funtion
+        let mut minDist: f32 = Graph::distance(&self.vectors[randNode], query);
+        
+        while true {
+            if Graph::distance(
+                &self.vectors[*self.get_close_neighbour(randNode, query)], // Closet Node 
+                query, // query vector 
+            ) < minDist
+            {
+                minDist = Graph::distance(
+                &self.vectors[*self.get_close_neighbour(randNode, query)], // Closet Node 
+                query, // query vector 
+            );
+            
+            }
+        }
+
+        todo!()
+    }
+
+    fn get_close_neighbour(&self, node: usize, query: &[f32]) -> &usize {
+        let closeNode = self.adj_list[node].par_iter().min_by(|n1, n2| {
+            Graph::distance(&self.vectors[**n1], query)
+                .total_cmp(&Graph::distance(&self.vectors[**n2], query))
+        });
+
+        match closeNode {
+            Some(node) => node,
+            None => {
+                todo!()
+            }
+        }
+    }
 
     fn cosine(vec1: &[f32], vec2: &[f32]) -> Cosine {
         let mut dot_sum: f32 = 0.0;
