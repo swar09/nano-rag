@@ -2,7 +2,10 @@ use ordered_float::OrderedFloat;
 #[warn(unused)]
 // #[warn(dead_code)]
 use rayon::prelude::*;
-use std::cmp::Ordering;
+use rayon::vec;
+use std::cmp::{Ordering, min};
+
+use rand::Rng;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
@@ -113,6 +116,28 @@ pub struct HNSW {
 
 impl HNSW {
     pub fn insert(&mut self, q: &[f32], m: usize, m_max: usize, efConstruction: usize, m_l: f32) {
+        let mut w: BinaryHeap<Reverse<(OrderedFloat<f32>, usize)>> = BinaryHeap::new();
+        let mut ep = self.entry_point.unwrap();
+        let top_layer = self.layers.upper_layers.len();
+        let u: f32 = rand::random();
+        let level = (- (1.0 - u).ln() * m_l).floor() as usize; // Level by decay function 
+
+        for lc in 0..level {
+            
+            let vec = HNSW::search_layer(&self, q, lc);
+            for e in vec {
+                let dist = VectorStore::squared_distance_to_query(&self.vectors, e, q);
+                w.push(Reverse((OrderedFloat(dist), e)));
+            }
+
+            let Reverse((OrderedFloat(shortest_dist_sq), ep)) = *w.peek().unwrap();
+            
+        }
+
+        for lc  in 0..min(, v2) {
+            
+        }
+
         todo!()
     }
 
