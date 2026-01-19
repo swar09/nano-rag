@@ -18,14 +18,14 @@ pub struct VectorStore {
 }
 
 impl VectorStore {
-    fn new(n: usize, dim: usize) -> Self {
+    pub fn new(n: usize, dim: usize) -> Self {
         Self {
             data: Vec::with_capacity(n * dim),
             dim,
         }
     }
 
-    fn insert(&mut self, vec: &[f32]) -> usize {
+    pub fn insert(&mut self, vec: &[f32]) -> usize {
         let id = self.data.len() / self.dim;
         self.data.extend_from_slice(vec);
         id
@@ -40,7 +40,7 @@ impl VectorStore {
             .sum()
     }
 
-    fn squared_distance_to_query(&self, v1_id: usize, query: &[f32]) -> f32 {
+    pub fn squared_distance_to_query(&self, v1_id: usize, query: &[f32]) -> f32 {
         let vec1 = &self.data[v1_id * self.dim..(v1_id + 1) * self.dim];
         vec1.iter()
             .zip(query.iter())
@@ -57,15 +57,35 @@ pub struct GraphLayers {
 struct Distibution {}
 
 impl GraphLayers {
+
+    fn initialize_node(&mut self, node_id: usize, target_level: usize){
+        self.base_layer.push(Vec::new());
+
+        // it must startfrom layer 1 
+        // and index from 0 so zero is writen here 
+        for l  in 0..target_level {
+            if l >= self.upper_layers.len() {
+               self.upper_layers.push(HashMap::new()); 
+            }
+            self.upper_layers[l].insert(node_id, Vec::new());
+        }
+    }
     fn add_neighbors(&mut self) {
         // TO-DO
     }
 
+    fn shrink_edge() {
+        // TODO
+    }
+
     fn add_edge(&mut self, node_id_1: usize, node_id_2: usize, layer: usize, d: bool) {
-        // Check if thye both exsist in the same layer ? ! :(
         if layer > 0 {
-            // Handle the upper layer addedge logic ! i GUESS WE DONT NEED THIS
-            // self.upper_layers[layer-1].get(&node_id_1);
+            if let Some(nodes) = self.upper_layers.get_mut(layer - 1) {
+                nodes.entry(node_id_1).or_insert_with(Vec::new).push(node_id_2);
+                if !d {
+                     nodes.entry(node_id_2).or_insert_with(Vec::new).push(node_id_1);
+                }
+            }
         } else {
             self.base_layer[node_id_1].push(node_id_2);
             if !d {
@@ -99,10 +119,11 @@ impl GraphLayers {
         }
     }
 
-    fn new() -> Self {
-        // Distrubution of nodes in the upper layer by exponetioal decay probalistic function
-        // Choose random nodes and promote them to upper layers
-        todo!()
+    pub fn new(max_level: usize) -> Self {
+        Self {
+            base_layer: Vec::new(),
+            upper_layers: Vec::with_capacity(max_level),
+        }
     }
 }
 
@@ -116,11 +137,86 @@ pub struct HNSW {
 }
 
 impl HNSW {
+    pub fn new(max_elements: usize, dim: usize) -> Self {
+        let layers = GraphLayers::new(16); // Default max levels
+        let vectors = VectorStore::new(max_elements, dim);
+        HNSW {
+             layers,
+             vectors,
+             entry_point: None,
+             max_level: 16,
+             ef_construction: 64, // Default
+             m: 16, // Default
+        }
+    }
     
+    pub fn insert(&mut self, q: usize, M: usize, Mmax: usize, ef_construction: usize, m_l: f32){
+        let mut w: BinaryHeap<Reverse<(OrderedFloat<f32>, usize)>> = BinaryHeap::new(); // Min Heap to get nearest dist_sq or node_id 
+        
+        let u: f32 = rand::random();
+        let level = (- (1.0 - u).ln() * m_l).floor() as usize;
+        self.layers.initialize_node(q, level);
+
+        let mut ep = match self.entry_point {
+            Some(ep) => ep,
+            None => {
+                // First element becomes entry point
+                self.entry_point = Some(q);
+                return; 
+            }
+        };
+
+        let top_level = self.layers.upper_layers.len();
+
+        for lc in ((level+1)..=top_level).rev() {
+            let k = self.search_layer(&self.vectors.data[q*self.vectors.dim..(q+1)*self.vectors.dim], ep, 1, lc);
+            // ep = nearest element in W
+            if let Some((OrderedFloat(_), best_node)) = k.peek() {
+                 ep = *best_node;
+            }
+        }
+
+        for lc in (0..=min(top_level, level)).rev() {
+            let k = self.search_layer(&self.vectors.data[q*self.vectors.dim..(q+1)*self.vectors.dim], ep, ef_construction, lc);
+            for (OrderedFloat(dist_sq),node_id) in k {
+                w.push(Reverse((OrderedFloat(dist_sq),node_id)));
+            }
+            // ep = nearest element in W
+            if let Some(Reverse((OrderedFloat(_), best_node))) = w.peek() {
+                ep = *best_node;
+            }
+
+            // neighbors ← SELECT-NEIGHBORS(q, W, M, lc)
+            
+            let candidates = w.clone().into_vec(); 
+            
+            let neighbors = HNSW::select_neighbors_simple(&self.vectors.data[q*self.vectors.dim..(q+1)*self.vectors.dim], candidates, M, lc);
+            
+            for node in &neighbors {
+                self.layers.add_edge(q, *node, lc, false);
+            }
+
+            for e in &neighbors {
+                // Shrink connections
+                let eConn = self.layers.get_neighbors(lc, *e);
+                if eConn.len() > Mmax {
+                     // Calculate distances for eConn to create candidates
+                     let mut conn_candidates = Vec::new();
+                     for &n in eConn {
+                         let dist = self.vectors.squared_distance(*e, n);
+                         conn_candidates.push(Reverse((OrderedFloat(dist), n)));
+                     }
+                     let _e_new_conn = HNSW::select_neighbors_simple(&self.vectors.data[e*self.vectors.dim..(e+1)*self.vectors.dim], conn_candidates, Mmax, lc);
+                     
+                }
+            }
+            w.clear(); // Clear w for next layer
+        }
+    }
 
     // greedy beam search
-    pub fn search_layer(&self, q: &[f32], lc: usize) -> BinaryHeap<(OrderedFloat<f32>, usize)> {
-        let ep = self.entry_point.expect("ENTRY POINT ERROR");
+    pub fn search_layer(&self, q: &[f32], ep: usize, ef_construction: usize,  lc: usize) -> BinaryHeap<(OrderedFloat<f32>, usize)> {
+        // let ep = self.entry_point.expect("ENTRY POINT ERROR");
         let sq_dist = VectorStore::squared_distance_to_query(&self.vectors, ep, q);
         // Candidates is Min Que
         let mut candidates: BinaryHeap<Reverse<(OrderedFloat<f32>, usize)>> = BinaryHeap::new(); // (Dist , node_id)
@@ -135,7 +231,7 @@ impl HNSW {
         while !candidates.is_empty() {
             let Reverse((OrderedFloat(dist_c), closest_candidate)) = candidates.pop().unwrap();
 
-            let (OrderedFloat(dist_worst), furthest_element) = *found_neighbours.peek().unwrap();
+            let (OrderedFloat(dist_worst), _furthest_element) = *found_neighbours.peek().unwrap();
 
             if dist_c > dist_worst {
                 break;
@@ -144,15 +240,15 @@ impl HNSW {
             for e in GraphLayers::get_neighbors(&self.layers, lc, closest_candidate) {
                 if !visited.contains(e) {
                     let dist_e = VectorStore::squared_distance_to_query(&self.vectors, *e, q);
-                    let dist_e_wrapped = OrderedFloat(dist_e);
+                    let _dist_e_wrapped = OrderedFloat(dist_e);
 
                     let (OrderedFloat(current_worst_dist), _) = *found_neighbours.peek().unwrap();
                     visited.insert(*e);
-                    if dist_e < current_worst_dist || found_neighbours.len() < self.ef_construction
+                    if dist_e < current_worst_dist || found_neighbours.len() < ef_construction
                     {
                         candidates.push(Reverse((OrderedFloat(dist_e), *e)));
                         found_neighbours.push((OrderedFloat(dist_e), *e));
-                        if found_neighbours.len() > self.ef_construction {
+                        if found_neighbours.len() > ef_construction {
                             found_neighbours.pop();
                         }
                     }
@@ -163,10 +259,59 @@ impl HNSW {
         // found_neighbours.into_iter().map(|(_, idx)| idx).collect()
     }
 
-    fn select_neighbors_simple(_q: &[f32], c: BinaryHeap<Reverse<(OrderedFloat<f32>, usize)>>, m: usize) -> Vec<usize> {
-        let mut candidates = c.into_vec();
+    // Algorithm 5: K-NN-SEARCH
+    pub fn search(&self, query: &[f32], k: usize, ef_search: usize) -> Vec<(f32, usize)> {
+        let mut ep = match self.entry_point {
+            Some(ep) => ep,
+            None => return Vec::new(),
+        };
 
-    
+        let top_level = self.layers.upper_layers.len();
+        // Phase 1: Greedy search from top to 1
+        for lc in (1..=top_level).rev() {
+             let w = self.search_layer(query, ep, 1, lc);
+             if let Some((OrderedFloat(_), best_node)) = w.peek() {
+                 ep = *best_node;
+             }
+        }
+
+       
+        let mut w = self.search_layer(query, ep, ef_search, 0);
+        
+        let mut result = Vec::new();
+        while let Some((OrderedFloat(dist), node_id)) = w.pop() {
+            result.push((dist, node_id));
+            if result.len() >= k {
+                
+            }
+        }
+        
+        result.reverse();
+        result.into_iter().take(k).collect()
+    }
+
+    pub fn brute_force_search(&self, query: &[f32], k: usize) -> Vec<(f32, usize)> {
+        let mut heap = BinaryHeap::new(); // Max heap to keep smallest k
+        
+        
+        let n = self.vectors.data.len() / self.vectors.dim;
+        for i in 0..n {
+             let dist = self.vectors.squared_distance_to_query(i, query);
+             heap.push((OrderedFloat(dist), i));
+             if heap.len() > k {
+                 heap.pop();
+             }
+        }
+        
+        let mut result = Vec::new();
+        while let Some((OrderedFloat(d), id)) = heap.pop() {
+            result.push((d, id));
+        }
+        result.reverse();
+        result
+    }
+
+    fn select_neighbors_simple(_q: &[f32], mut candidates: Vec<Reverse<(OrderedFloat<f32>, usize)>>, m: usize, _lc: usize) -> Vec<usize> {
         if candidates.len() <= m {
             candidates.sort_unstable(); 
             return candidates.into_iter().map(|Reverse((_, id))| id).collect();
