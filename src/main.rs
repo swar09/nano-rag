@@ -1,10 +1,8 @@
-use nano_rag::HNSW;
+use photon::HNSW;
 use std::sync::{Arc, RwLock};
 use std::{result, thread};
 // use serde::*;
-use std::fs::File;
- use std::io::Write;
-use rkyv::{deserialize, Deserialize, rancor::Error, Archive, Serialize};
+// use photon::PhotonDB;
 
 const EPSILON: f32 = 1e-5;
 
@@ -28,26 +26,23 @@ mod tests {
 }
 
 fn main() {
-    let mut hnsw = HNSW::new(1_000_000, 1536);
+    let mut hnsw = HNSW::new(10, 3);
 
-    for _i in 0..1_000 {
-            let vec = vec![567.5; 1536]; // 1. Create the data
+    // for _i in 0..100 {
+    //         let vec = vec![1.5; 3]; // 1. Create the data
             
-            // 2. PUT DATA IN STORE FIRST (This was missing!)
-            // This returns the ID of the new vector
-            let id = hnsw.vectors.insert(&vec); 
+    //         // 2. PUT DATA IN STORE FIRST (This was missing!)
+    //         // This returns the ID of the new vector
+    //         let id = hnsw.vectors.insert(&vec); 
             
-            // 3. NOW Insert into HNSW Graph using that ID
-            // M=16, Mmax=32, ef=64, m_l=0.5
-            hnsw.insert(id, 16, 32, 64, 0.1);
-    }
+    //         // 3. NOW Insert into HNSW Graph using that ID
+    //         // M=16, Mmax=32, ef=64, m_l=0.5
+    //         hnsw.insert(id, 16, 32, 64, 0.1);
+    // }
     
-    // bytes 
-    let bytes = rkyv::to_bytes::<Error>(&hnsw).unwrap();
-    
-    
-    
-    
+    // // bytes 
+    // // let _bytes = rkyv::to_bytes::<Error>(&hnsw).unwrap();
+
     // let shared_db = Arc::new(RwLock::new(hnsw));
     // println!("Database initialized and locked globally.");
     // println!("HNSW Library Compiles!");
@@ -89,11 +84,15 @@ fn main() {
     // insert_handle.join().unwrap();
     // search_handle.join().unwrap();
 
+    // let mut file = File::create("/home/eleven/Rust/projects-jan/photon/src/database.pho");
+    //     file.expect("REASON").write_all(&_bytes);
 
+    // let bytes = fs::read("/home/eleven/Rust/projects-jan/photon/src/database.pho")
+    // .expect("Failed to read bincode file");
+    // let mut deserialized = from_bytes::<HNSW, Error>(&bytes).unwrap();
+    // println!("{:?}", deserialized.insert(4, 4, 6, 5, 0.5));
     
-    let mut file = File::create("/home/eleven/Rust/projects-jan/photon/src/database.pho");
-        file.expect("REASON").write_all(&bytes);
-
+    // println!("{:?}", deserialized.layers.upper_layers.len());
 
 
 

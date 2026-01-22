@@ -1,3 +1,4 @@
 /target
-./src/database.pho
 .vscode
+src/database.pho
+

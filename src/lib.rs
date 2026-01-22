@@ -9,6 +9,8 @@ use std::collections::{BinaryHeap, HashMap, HashSet};
 // Expreimenting 
 use rkyv::{deserialize, Deserialize, rancor::Error, Archive, Serialize};
 
+pub mod persistence;
+pub mod wrapper;
 
 #[derive(Archive, Deserialize, Serialize, Debug, PartialEq)]
 pub struct VectorStore {
@@ -84,10 +86,9 @@ impl VectorStore {
 
 
 #[derive(Archive, Deserialize, Serialize, Debug, PartialEq)]
-
 pub struct GraphLayers {
-    base_layer: Vec<Vec<usize>>,
-    upper_layers: Vec<HashMap<usize, Vec<usize>>>,
+    pub base_layer: Vec<Vec<usize>>,
+    pub upper_layers: Vec<HashMap<usize, Vec<usize>>>,
 }
 
 #[derive(Archive, Deserialize, Serialize, Debug, PartialEq)]
