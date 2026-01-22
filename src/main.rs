@@ -28,53 +28,68 @@ mod tests {
 }
 
 fn main() {
-    let hnsw = HNSW::new(1000, 128);
-    // bytes 
-    let bytes = rkyv::to_bytes::<Error>(&hnsw).unwrap();
+    let mut hnsw = HNSW::new(1_000_000, 1536);
 
-    
-    
-    
-    let shared_db = Arc::new(RwLock::new(hnsw));
-    println!("Database initialized and locked globally.");
-    println!("HNSW Library Compiles!");
-    let db_writer = Arc::clone(&shared_db);
-    
-    let insert_handle = thread::spawn(move || {
-        let mut guard = db_writer.write().unwrap();
-        println!("Writer: Acquired lock. Inserting data...");
-        
-        // Simulating heavy work
-        for _i in 0..100 {
-            let vec = vec![1.5; 128]; // 1. Create the data
+    for _i in 0..1_000 {
+            let vec = vec![567.5; 1536]; // 1. Create the data
             
             // 2. PUT DATA IN STORE FIRST (This was missing!)
             // This returns the ID of the new vector
-            let id = guard.vectors.insert(&vec); 
+            let id = hnsw.vectors.insert(&vec); 
             
             // 3. NOW Insert into HNSW Graph using that ID
             // M=16, Mmax=32, ef=64, m_l=0.5
-            guard.insert(id, 16, 32, 64, 0.5); 
-        }
-        println!("Writer: Finished. Releasing lock.");
-    });
+            hnsw.insert(id, 16, 32, 64, 0.1);
+    }
     
-    let db_reader = Arc::clone(&shared_db);
+    // bytes 
+    let bytes = rkyv::to_bytes::<Error>(&hnsw).unwrap();
     
-    let search_handle = thread::spawn(move || {
-        let mut gaurd = db_reader.read().unwrap();
-        println!("Reader: Acquired lock. Reading data...");
-        // write  a search vector function in the hnsw here to test this out 
+    
+    
+    
+    // let shared_db = Arc::new(RwLock::new(hnsw));
+    // println!("Database initialized and locked globally.");
+    // println!("HNSW Library Compiles!");
+    // let db_writer = Arc::clone(&shared_db);
+    
+    // let insert_handle = thread::spawn(move || {
+    //     let mut guard = db_writer.write().unwrap();
+    //     println!("Writer: Acquired lock. Inserting data...");
         
-        let query = vec![2.56; 128];
-        
-        let results = gaurd.search(&query, 2, 1);
-        println!("{:?}", results);
-        println!("Reader: Finished. Releasing lock.");
-    });
+    //     // Simulating heavy work
+    //     for _i in 0..100 {
+    //         let vec = vec![1.5; 128]; // 1. Create the data
+            
+    //         // 2. PUT DATA IN STORE FIRST (This was missing!)
+    //         // This returns the ID of the new vector
+    //         let id = guard.vectors.insert(&vec); 
+            
+    //         // 3. NOW Insert into HNSW Graph using that ID
+    //         // M=16, Mmax=32, ef=64, m_l=0.5
+    //         guard.insert(id, 16, 32, 64, 0.5); 
+    //     }
+    //     println!("Writer: Finished. Releasing lock.");
+    // });
     
-    insert_handle.join().unwrap();
-    search_handle.join().unwrap();
+    // let db_reader = Arc::clone(&shared_db);
+    
+    // let search_handle = thread::spawn(move || {
+    //     let mut gaurd = db_reader.read().unwrap();
+    //     println!("Reader: Acquired lock. Reading data...");
+    //     // write  a search vector function in the hnsw here to test this out 
+        
+    //     let query = vec![2.56; 128];
+        
+    //     let results = gaurd.search(&query, 2, 1);
+    //     println!("{:?}", results);
+    //     println!("Reader: Finished. Releasing lock.");
+    // });
+    
+    // insert_handle.join().unwrap();
+    // search_handle.join().unwrap();
+
+
     
     let mut file = File::create("/home/eleven/Rust/projects-jan/photon/src/database.pho");
         file.expect("REASON").write_all(&bytes);
