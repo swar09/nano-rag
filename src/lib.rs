@@ -14,8 +14,8 @@ pub mod wrapper;
 
 #[derive(Archive, Deserialize, Serialize, Debug, PartialEq)]
 pub struct VectorStore {
-    data: Vec<f32>,
-    dim: usize,
+    pub data: Vec<f32>,
+    pub dim: usize,
 }
 
 impl VectorStore {
