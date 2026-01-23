@@ -7,17 +7,17 @@ pub struct db {
 }
 
 impl db {
-    fn add () {}
-    fn search(){}
-    fn delete(){}
-    fn get() {}
-    fn save() {}
-    fn load() {}
-    fn export_vectors() {}
-    fn search_by_id() {}
-    fn getneighbors() {}
-    fn update_vector() {}
-    fn merge_vector() {}
-    fn count() {}
-    fn stats() {}
+    pub fn add () {}
+    pub fn search(){}
+    pub fn delete(){}
+    pub fn get() {}
+    pub fn save() {}
+    pub fn load() {}
+    pub fn export_vectors() {}
+    pub fn search_by_id() {}
+    pub fn getneighbors() {}
+    pub fn update_vector() {}
+    pub fn merge_vector() {}
+    pub fn count() {}
+    pub fn stats() {}
 }

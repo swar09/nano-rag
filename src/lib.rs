@@ -148,9 +148,23 @@ impl GraphLayers {
         self.upper_layers[layer - 1].insert(node_id, Vec::new());
     }
 
+    fn set_neighbors(&mut self, layer: usize, node_id: usize, neighbors: Vec<usize>) {
+        if layer == 0 {
+            if node_id < self.base_layer.len() {
+                self.base_layer[node_id] = neighbors;
+            }
+        } else {
+            if layer <= self.upper_layers.len() {
+                if let Some(nodes) = self.upper_layers.get_mut(layer - 1) {
+                    nodes.insert(node_id, neighbors);
+                }
+            }
+        }
+    }
+
     fn get_neighbors(&self, layer: usize, node_id: usize) -> &[usize] {
         if layer == 0 {
-            return &self.base_layer[node_id];
+            &self.base_layer[node_id]
         } else {
             if layer <= self.upper_layers.len() {
                 match self.upper_layers[layer - 1].get(&node_id) {
@@ -158,7 +172,7 @@ impl GraphLayers {
                     None => &[],
                 }
             } else {
-                return &[];
+                &[]
             }
         }
     }
@@ -266,12 +280,13 @@ impl HNSW {
                         let dist = self.vectors.squared_distance(*e, n);
                         conn_candidates.push(Reverse((OrderedFloat(dist), n)));
                     }
-                    let _e_new_conn = HNSW::select_neighbors_simple(
+                    let e_new_conn = HNSW::select_neighbors_simple(
                         &self.vectors.data[e * self.vectors.dim..(e + 1) * self.vectors.dim],
                         conn_candidates,
                         Mmax,
                         lc,
                     );
+                    self.layers.set_neighbors(lc, *e, e_new_conn);
                 }
             }
             w.clear(); // Clear w for next layer
