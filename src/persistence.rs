@@ -11,6 +11,7 @@ use crate::HNSW;
 
 pub struct PhotonDB {
     hnsw: HNSW,
+    dim: usize,
     path: PathBuf,
 
 }
@@ -25,17 +26,25 @@ impl PhotonDB {
             let bytes =  fs::read(&path).expect("Failed to read file ");
 
             let mut hnsw  = rkyv::from_bytes::<HNSW, Error>(&bytes).unwrap();
-            return PhotonDB { hnsw , path};
+            return PhotonDB { hnsw , dim,  path};
         } else {
-            return PhotonDB { hnsw: HNSW::new(max_elements, dim), path };
+            return PhotonDB { hnsw: HNSW::new(max_elements, dim), dim,  path };
         }
         
     }
     
     fn save(&self) {
         // let bytes = rkyv::from_bytes::<Error>(&self.hnsw).unwrap();
-        
+    //     3. **`save(&self)`**
+    // - **Serialize**: `rkyv::to_bytes::<Error>(&self.hnsw)`.
+    // - **Atomic Write**:
+    //     1. Create `database.pho.tmp`.
+    //     2. Write bytes.
+    //     3. `fs::rename("database.pho.tmp", "database.pho")`.
+    // - This ensures you never corrupt the DB if the program crashes while saving.
     }
+
+    
 }
 
 

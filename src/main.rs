@@ -27,6 +27,8 @@ mod tests {
 
 fn main() {
     let mut hnsw = HNSW::new(10, 3);
+        
+}
 
     // for _i in 0..100 {
     //         let vec = vec![1.5; 3]; // 1. Create the data
@@ -93,7 +95,3 @@ fn main() {
     // println!("{:?}", deserialized.insert(4, 4, 6, 5, 0.5));
     
     // println!("{:?}", deserialized.layers.upper_layers.len());
-
-
-
-}

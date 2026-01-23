@@ -32,7 +32,7 @@ impl VectorStore {
         id
     }
     
-    fn squared_distance(&self, v1_id: usize, v2_id: usize) -> f32 {
+    pub fn squared_distance(&self, v1_id: usize, v2_id: usize) -> f32 {
         let vec1 = &self.data[v1_id * self.dim..(v1_id + 1) * self.dim];
         let vec2 = &self.data[v2_id * self.dim..(v2_id + 1) * self.dim];
         
@@ -328,7 +328,7 @@ impl HNSW {
         // found_neighbours.into_iter().map(|(_, idx)| idx).collect()
     }
 
-    // Algorithm 5: K-NN-SEARCH
+    //  K-NN-SEARCH
     pub fn search(&self, query: &[f32], k: usize, ef_search: usize) -> Vec<(f32, usize)> {
         let mut ep = match self.entry_point {
             Some(ep) => ep,
@@ -378,7 +378,7 @@ impl HNSW {
         results.into_iter().map(|(OrderedFloat(d), i)| (d, i)).collect()
     }
 
-    fn select_neighbors_simple(
+    pub fn select_neighbors_simple(
         _q: &[f32],
         mut candidates: Vec<Reverse<(OrderedFloat<f32>, usize)>>,
         m: usize,
