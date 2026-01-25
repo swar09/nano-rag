@@ -325,7 +325,7 @@ impl HNSW {
 
             let (OrderedFloat(dist_worst), _furthest_element) = *found_neighbours.peek().unwrap();
 
-            if dist_c > dist_worst {
+            if dist_c > dist_worst && found_neighbours.len() >= ef_construction {
                 break;
             }
 
@@ -402,19 +402,13 @@ impl HNSW {
 
     pub fn select_neighbors_simple(
         _q: &[f32],
-        mut candidates: Vec<Reverse<(OrderedFloat<f32>, usize)>>,
+        candidates: Vec<Reverse<(OrderedFloat<f32>, usize)>>,
         m: usize,
         _lc: usize,
     ) -> Vec<usize> {
-        if candidates.len() <= m {
-            candidates.sort_unstable();
-            return candidates.into_iter().map(|Reverse((_, id))| id).collect();
-        }
-
-        candidates.select_nth_unstable(m);
-        candidates.truncate(m);
-
-        candidates.into_iter().map(|Reverse((_, id))| id).collect()
+        let mut clean_candidates: Vec<_> = candidates.into_iter().map(|Reverse(x)| x).collect();
+        clean_candidates.sort_unstable(); // Sorts by distance ascending (Smallest first)
+        clean_candidates.into_iter().take(m).map(|(_, id)| id).collect()
     }
 }
 
