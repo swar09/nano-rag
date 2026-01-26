@@ -423,7 +423,7 @@ struct PyHNSW {
 #[pymethods]
 impl PyHNSW {
     #[new]
-    fn new(max_elements: usize, dim: usize, m: usize, ef_construction: usize) -> Self {
+    pub fn new(max_elements: usize, dim: usize, m: usize, ef_construction: usize) -> Self {
         let mut hnsw = HNSW::new(max_elements, dim);
         hnsw.m = m;
         hnsw.ef_construction = ef_construction;

@@ -1,4 +1,4 @@
-use photon::HNSW;
+use photon_db::HNSW;
 // use serde::*;
 // use photon::PhotonDB;
 

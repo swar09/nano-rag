@@ -1,6 +1,6 @@
-use photon::HNSW;
-use photon::persistence::PhotonDB;
-use photon::VectorStore;
+use photon_db::HNSW;
+use photon_db::persistence::PhotonDB;
+use photon_db::VectorStore;
 use rand::Rng;
 use std::fs;
 // use std::path::PathBuf;

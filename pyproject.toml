@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "photon-db"
-version = "0.1.0"
+version = "0.0.1"
 description = "High-performance Vector Database in Rust"
 authors = [{name = "Swarnit Ghule", email = "ghuleswarnit@gmail.com"}]
 readme = "README.md"

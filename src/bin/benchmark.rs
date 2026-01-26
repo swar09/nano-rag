@@ -1,6 +1,6 @@
 // use colored::*;
 use colored_text::Colorize;
-use photon::HNSW;
+use photon_db::HNSW;
 use rayon::prelude::*;
 use std::time::{Duration, Instant};
 use rand::prelude::*;
